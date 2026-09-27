@@ -1,0 +1,12 @@
+{
+  "name": "Remember Us: Unsent Letters Archive",
+  "description": "A peaceful digital sanctuary for unsent letters, where all submitted and initial letters are persistently saved in the browser. The explore view now features search that performs an exact match on the 'To:' field, along with enhanced filtering and sorting options.",
+  "entry": "index.html",
+  "multiPage": false,
+  "files": [
+    "index.html",
+    "metadata.json"
+  ],
+  "tailwind": { "source": "play-cdn" },
+  "generatedAt": "2024-07-30T13:00:00Z"
+}
