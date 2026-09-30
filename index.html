@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Remember Us?</title>
-    <link rel="icon" type="image/png" href="favicon.png">
+    <title>Remember Us: An Archive of Unsent Letters</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -108,20 +107,20 @@
         <nav class="container mx-auto px-4 py-4 flex justify-between items-center">
             <a href="#home" class="text-2xl font-serif font-bold text-text-primary hover:text-dusty-rose transition-colors" onclick="navigate('home')">Remember Us</a>
             <div class="hidden md:flex space-x-6">
-                <a href="#explore" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('explore')">Explore</a>
+                <a href="#browse" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('browse')">Explore</a>
                 <a href="#write" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('write')">Write a Letter</a>
                 <a href="#about" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('about')">About</a>
-                <button class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('explore', {focusSearch: true})">Search</button>
+                <button class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('search', {focusSearch: true})">Search</button>
             </div>
             <button id="mobile-menu-button" class="md:hidden text-text-primary focus:outline-none">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
             </button>
         </nav>
         <div id="mobile-menu" class="md:hidden bg-paper-bg/90 backdrop-blur-sm border-t border-border-light hidden flex-col items-center py-4 space-y-4">
-            <a href="#explore" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('explore')">Explore</a>
+            <a href="#browse" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('browse')">Explore</a>
             <a href="#write" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('write')">Write a Letter</a>
             <a href="#about" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('about')">About</a>
-            <button class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('explore', {focusSearch: true})">Search</button>
+            <button class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('search', {focusSearch: true})">Search</button>
         </div>
     </header>
 
@@ -139,7 +138,7 @@
                 <button class="bg-dusty-rose text-white font-medium py-3 px-8 rounded-full shadow-md hover:bg-terracotta transition-colors" onclick="navigate('write')">
                     Write a letter
                 </button>
-                <button class="bg-warm-beige text-text-primary font-medium py-3 px-8 rounded-full shadow-md hover:bg-cream transition-colors" onclick="navigate('explore')">
+                <button class="bg-warm-beige text-text-primary font-medium py-3 px-8 rounded-full shadow-md hover:bg-cream transition-colors" onclick="navigate('browse')">
                     Explore the letters
                 </button>
             </div>
@@ -148,10 +147,19 @@
             <div id="featured-letters" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl"></div>
         </section>
 
-        <!-- Explore View -->
-        <section id="explore-view" class="view-transition hidden-view py-8">
+        <!-- Browse View (New Explore Tab) -->
+        <section id="browse-view" class="view-transition hidden-view py-8">
+            <h2 class="text-4xl font-serif text-text-primary mb-8 text-center">Explore all letters.</h2>
+            <div id="all-letters-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            <div id="browse-empty-state" class="text-center text-text-secondary text-xl py-12 hidden">
+                No letters found. Be the first to write one!
+            </div>
+        </section>
+
+        <!-- Search View (Formerly Explore View) -->
+        <section id="search-view" class="view-transition hidden-view py-8">
             <h2 class="text-4xl font-serif text-text-primary mb-8 text-center">Find a letter.</h2>
-            <div class="max-w-4xl mx-auto mb-8">
+            <div id="search-input-container" class="max-w-4xl mx-auto mb-8 hidden"> <!-- Added hidden class -->
                 <input type="text" id="search-input" placeholder="Search by name or words..." class="w-full p-4 rounded-lg border border-border-light focus:ring-2 focus:ring-dusty-rose focus:border-dusty-rose transition-all shadow-sm text-lg bg-white/70 backdrop-blur-sm">
             </div>
 
@@ -178,7 +186,7 @@
         <!-- Letter Detail View -->
         <section id="letter-detail-view" class="view-transition hidden-view flex justify-center items-center py-8">
             <div id="letter-detail-content" class="letter-detail-paper p-8 md:p-12 max-w-3xl w-full mx-auto relative overflow-hidden">
-                <button class="absolute top-4 left-4 text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('explore')">
+                <button class="absolute top-4 left-4 text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('browse')">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                     <span class="sr-only">Back to archive</span>
                 </button>
@@ -437,7 +445,8 @@
 
         const views = {
             'home': document.getElementById('home-view'),
-            'explore': document.getElementById('explore-view'),
+            'browse': document.getElementById('browse-view'), // New view for browsing all letters
+            'search': document.getElementById('search-view'), // Renamed from 'explore-view'
             'detail': document.getElementById('letter-detail-view'),
             'write': document.getElementById('write-view'),
             'confirmation': document.getElementById('confirmation-view'),
@@ -448,12 +457,27 @@
         let reportedLettersStatus = JSON.parse(localStorage.getItem('reportedLettersStatus')) || {};
 
         function navigate(viewId, options = {}) {
-            if (currentView === viewId && !options.forceReload) return;
+            // Prevent re-navigation to the same view unless forced or specific search focus
+            if (currentView === viewId && !options.forceReload && !(viewId === 'search' && options.focusSearch)) {
+                return;
+            }
 
             // Hide current view with transition
             if (views[currentView]) {
                 views[currentView].classList.remove('active-view');
                 views[currentView].classList.add('hidden-view');
+            }
+
+            const searchInputContainer = document.getElementById('search-input-container');
+            const searchInput = document.getElementById('search-input');
+
+            // Reset search state if leaving the search view
+            if (currentView === 'search' && viewId !== 'search') {
+                if (searchInputContainer) {
+                    searchInputContainer.classList.add('hidden');
+                    currentFilters.search = ''; // Clear search filter
+                    searchInput.value = '';     // Clear search input field
+                }
             }
 
             // Show new view with transition
@@ -467,15 +491,16 @@
             }
 
             // Specific actions for views
-            if (viewId === 'explore') {
-                renderLetters();
-                if (options.focusSearch) {
-                    document.getElementById('search-input').focus();
+            if (viewId === 'browse') {
+                renderAllLettersForBrowseView(); // Render all letters for the new browse view
+            } else if (viewId === 'search') {
+                if (searchInputContainer) {
+                    searchInputContainer.classList.remove('hidden'); // Ensure search input is visible for search view
+                    if (options.focusSearch) {
+                        searchInput.focus();
+                    }
                 }
-            } else if (viewId === 'write') {
-                resetWriteForm();
-            } else if (viewId === 'home') {
-                renderFeaturedLetters();
+                renderLetters(); // Render letters for the search view with filters
             }
 
             // Update URL hash for basic routing
@@ -529,7 +554,27 @@
             });
         }
 
+        function renderAllLettersForBrowseView() {
+            const grid = document.getElementById('all-letters-grid');
+            grid.innerHTML = '';
+            const emptyState = document.getElementById('browse-empty-state');
+
+            if (letters.length === 0) {
+                emptyState.classList.remove('hidden');
+                grid.classList.add('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                grid.classList.remove('hidden');
+                // Sort letters for consistent display, e.g., by most recent
+                const sortedLetters = [...letters].sort((a, b) => new Date(b.submitted) - new Date(a.submitted));
+                sortedLetters.forEach(letter => {
+                    grid.appendChild(createLetterCard(letter));
+                });
+            }
+        }
+
         function renderLetters() {
+            // This function is now specifically for the search-view, applying filters
             const grid = document.getElementById('letter-archive-grid');
             grid.innerHTML = '';
             const emptyState = document.getElementById('empty-state');
@@ -551,11 +596,12 @@
         function applyFilters(allLetters) {
             let filtered = [...allLetters];
 
-            // Search filter
-            if (currentFilters.search) {
-                const searchTerm = currentFilters.search.trim().toLowerCase(); // Trimmed and lowercased
+            // Search filter only applies if search input is visible and has a value
+            const searchInputContainer = document.getElementById('search-input-container');
+            if (searchInputContainer && !searchInputContainer.classList.contains('hidden') && currentFilters.search) {
+                const searchTerm = currentFilters.search.trim().toLowerCase();
                 filtered = filtered.filter(letter =>
-                    letter.to.toLowerCase() === searchTerm // Changed to exact match
+                    letter.to.toLowerCase().includes(searchTerm) || letter.text.toLowerCase().includes(searchTerm)
                 );
             }
 
@@ -581,12 +627,12 @@
                     if (currentFilters.date === 'Today') {
                         return submittedDate.toDateString() === today.toDateString();
                     } else if (currentFilters.date === 'This week') {
-                        const oneWeekAgo = new Date(today.setDate(today.getDate() - 7));
+                        const oneWeekAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7);
                         return submittedDate >= oneWeekAgo;
                     } else if (currentFilters.date === 'This month') {
                         return submittedDate.getMonth() === today.getMonth() && submittedDate.getFullYear() === today.getFullYear();
                     } else if (currentFilters.date === 'Earlier') {
-                        const oneMonthAgo = new Date(today.setMonth(today.getMonth() - 1));
+                        const oneMonthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
                         return submittedDate < oneMonthAgo;
                     }
                     return true;
@@ -645,7 +691,7 @@
             showLetterDetail(randomLetter.id);
         }
 
-        // --- Filter UI Rendering ---
+        // --- Filter UI Rendering (for Search View) ---
 
         function renderColorFilters() {
             const container = document.getElementById('color-filters');
@@ -666,7 +712,7 @@
                         currentFilters.colors.push(name);
                     }
                     renderColorFilters(); // Re-render to update active state
-                    renderLetters();
+                    renderLetters(); // Re-render letters in search view
                 });
                 container.appendChild(button);
             });
@@ -681,14 +727,15 @@
                 button.className = `px-4 py-2 rounded-full text-sm font-medium transition-colors border border-border-light`;
                 if (currentFilters.category === category) {
                     button.classList.add('bg-dusty-rose', 'text-white', 'hover:bg-terracotta');
-                } else {
+                }
+                else {
                     button.classList.add('bg-warm-beige', 'text-text-primary', 'hover:bg-cream');
                 }
                 button.textContent = category;
                 button.addEventListener('click', () => {
                     currentFilters.category = category;
                     renderCategoryFilters();
-                    renderLetters();
+                    renderLetters(); // Re-render letters in search view
                 });
                 container.appendChild(button);
             });
@@ -712,7 +759,7 @@
                 button.addEventListener('click', () => {
                     currentFilters.date = option;
                     renderDateFilters();
-                    renderLetters();
+                    renderLetters(); // Re-render letters in search view
                 });
                 container.appendChild(button);
             });
@@ -735,7 +782,7 @@
                 button.addEventListener('click', () => {
                     currentFilters.sort = option;
                     renderSortFilters(); // Re-render to update active state
-                    renderLetters();
+                    renderLetters(); // Re-render letters in search view
                 });
                 container.appendChild(button);
             });
@@ -820,10 +867,10 @@
             return new Date(dateString).toLocaleDateString(undefined, options);
         }
 
-        // --- Event Listeners for Explore View Filters ---
+        // --- Event Listeners for Search View Filters ---
         document.getElementById('search-input').addEventListener('input', (e) => {
             currentFilters.search = e.target.value;
-            renderLetters();
+            renderLetters(); // Re-render letters in search view
         });
 
         // --- Report Button Logic ---
@@ -858,15 +905,30 @@
                     }, 5000);
                 });
             }
-        });
 
-        // Initial rendering calls
-        renderFeaturedLetters();
-        renderColorFilters();
-        renderCategoryFilters();
-        renderDateFilters();
-        renderSortFilters(); // New call
-        renderColorPicker();
+            // Initial rendering calls for filter UI (these are for the search view)
+            renderColorFilters();
+            renderCategoryFilters();
+            renderDateFilters();
+            renderSortFilters();
+
+            // Initial rendering for other views
+            renderFeaturedLetters(); // For home view
+            renderColorPicker(); // For write view
+
+            // Initial navigation based on URL hash
+            const initialHash = window.location.hash.substring(1);
+            if (initialHash && views[initialHash]) {
+                // If the hash is 'explore' (old name), redirect to 'browse' for the new explore experience
+                if (initialHash === 'explore') {
+                    navigate('browse');
+                } else {
+                    navigate(initialHash);
+                }
+            } else {
+                navigate('home');
+            }
+        });
 
     </script>
 </body>
