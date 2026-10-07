@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remember Us: An Archive of Unsent Letters</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>window.sb = window.supabase.createClient("https://c--a9cd387b-b7bb-4d7e-83c7-81f3fb6b37d8-prod.lovable.cloud", "sb_publishable_1K692BzN-0lV6aJBr-jCIA_cILIY1ZA");</script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        serif: ['Merriweather', 'serif'],
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'ivory': '#FDFBF6',
+                        'cream': '#F8F5EC',
+                        'warm-beige': '#EFEADF',
+                        'dusty-rose': '#DDC6C6',
+                        'soft-pink': '#F4DEDC',
+                        'sage': '#C6DBC6',
+                        'pale-blue': '#DDEBF2',
+                        'powder-blue': '#BBDDEE',
+                        'lavender': '#E0DDF2',
+                        'muted-peach': '#F5E0D9',
+                        'soft-yellow': '#F9F7E0',
+                        'pale-green': '#E0F2E0',
+                        'terracotta': '#D9A18B',
+                        'paper-bg': '#FDFBF6',
+                        'text-primary': '#333333',
+                        'text-secondary': '#6B7280',
+                        'border-light': '#E5E7EB',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: theme('colors.paper-bg');
+            font-family: theme('fontFamily.sans');
+            color: theme('colors.text-primary');
+            line-height: 1.6;
+        }
+        .letter-card, .letter-detail-paper, .write-letter-form {
+            background-color: var(--letter-color, theme('colors.ivory'));
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .letter-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        }
+        .paper-texture {
+            background-image: url("data:image/svg+xml,%3Csvg width='6' height='6' viewBox='0 0 6 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239C92AC' fill-opacity='0.1' fill-rule='evenodd'%3E%3Cpath d='M0 0h3v3H0V0zm3 3h3v3H3V3z'/%3E%3C/g%3E%3C/svg%3E");
+            background-repeat: repeat;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .view-transition {
+            transition: opacity 0.3s ease-in-out;
+        }
+        .hidden-view {
+            opacity: 0;
+            pointer-events: none;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+        }
+        .active-view {
+            opacity: 1;
+            pointer-events: auto;
+            position: relative;
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: theme('colors.warm-beige');
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: theme('colors.dusty-rose');
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: theme('colors.terracotta');
+        }
+        /* Mobile writing comfort */
+        @media (max-width: 640px) {
+            #write-view input, #write-view textarea, #write-view select, #account-view input, #report-modal textarea, #report-modal select { font-size: 16px; }
+            #write-text { min-height: 55vh; line-height: 1.7; padding: 1rem; }
+            #write-view h2 { font-size: 2rem; }
+            #color-picker button { width: 44px; height: 44px; }
+            #write-letter-form button[type="submit"] { min-height: 52px; }
+        }
+        #write-text { scroll-margin-top: 90px; scroll-margin-bottom: 40vh; }
+    </style>
+</head>
+<body class="font-sans text-text-primary min-h-screen flex flex-col paper-texture">
+
+    <header class="bg-paper-bg/80 backdrop-blur-sm sticky top-0 z-50 shadow-sm border-b border-border-light">
+        <nav class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="#home" class="text-2xl font-serif font-bold text-text-primary hover:text-dusty-rose transition-colors" onclick="navigate('home')">Remember Us</a>
+            <div class="hidden md:flex space-x-6">
+                <a href="#browse" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('browse')">Explore</a>
+                <a href="#write" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('write')">Write a Letter</a>
+                <a href="#about" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('about')">About</a>
+                <button class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('search', {focusSearch: true})">Search</button>
+                <a href="#account" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('account')">Account</a>
+            </div>
+            <button id="mobile-menu-button" class="md:hidden text-text-primary focus:outline-none">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="md:hidden bg-paper-bg/90 backdrop-blur-sm border-t border-border-light hidden flex-col items-center py-4 space-y-4">
+            <a href="#browse" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('browse')">Explore</a>
+            <a href="#write" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('write')">Write a Letter</a>
+            <a href="#about" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('about')">About</a>
+            <button class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('search', {focusSearch: true})">Search</button>
+            <a href="#account" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('account')">Account</a>
+        </div>
+    </header>
+
+    <main id="app-content" class="flex-grow container mx-auto px-4 py-8 relative overflow-hidden">
+
+        <!-- Home View -->
+        <section id="home-view" class="view-transition active-view flex flex-col items-center justify-center text-center min-h-[calc(100vh-160px)]">
+            <h1 class="text-5xl md:text-7xl font-serif font-light leading-tight text-text-primary mb-6 max-w-4xl">
+                Letters that were never sent.
+            </h1>
+            <p class="text-xl md:text-2xl text-text-secondary mb-8 max-w-2xl">
+                Some words are easier to write than to say. <br>A quiet place for the things we never got to tell someone.
+            </p>
+            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                <button class="bg-dusty-rose text-white font-medium py-3 px-8 rounded-full shadow-md hover:bg-terracotta transition-colors" onclick="navigate('write')">
+                    Write a letter
+                </button>
+                <button class="bg-warm-beige text-text-primary font-medium py-3 px-8 rounded-full shadow-md hover:bg-cream transition-colors" onclick="navigate('browse')">
+                    Explore the letters
+                </button>
+                <button class="bg-cream text-text-primary font-medium py-3 px-8 rounded-full shadow-md hover:bg-warm-beige transition-colors" onclick="showRandomLetterDetail()">
+                    Read a letter
+                </button>
+            </div>
+
+            <h2 class="text-3xl font-serif text-text-primary mt-20 mb-8">Words from strangers.</h2>
+            <div id="featured-letters" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl"></div>
+        </section>
+
+        <!-- Browse View (New Explore Tab) -->
+        <section id="browse-view" class="view-transition hidden-view py-8">
+            <h2 class="text-4xl font-serif text-text-primary mb-8 text-center">Explore all letters.</h2>
+            <div id="all-letters-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            <div id="browse-empty-state" class="text-center text-text-secondary text-xl py-12 hidden">
+                No letters found. Be the first to write one!
+            </div>
+            <div id="browse-collections" class="hidden mt-16">
+                <h3 class="text-3xl font-serif text-text-primary mb-6 text-center">Memorial collections</h3>
+                <div id="browse-collections-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+        </section>
+
+        <!-- Search View (Formerly Explore View) -->
+        <section id="search-view" class="view-transition hidden-view py-8">
+            <h2 class="text-4xl font-serif text-text-primary mb-8 text-center">Find a letter.</h2>
+            <div id="search-input-container" class="max-w-4xl mx-auto mb-8 hidden"> <!-- Added hidden class -->
+                <input type="text" id="search-input" placeholder="Search by name or words..." class="w-full p-4 rounded-lg border border-border-light focus:ring-2 focus:ring-dusty-rose focus:border-dusty-rose transition-all shadow-sm text-lg bg-white/70 backdrop-blur-sm">
+            </div>
+
+            <div class="max-w-4xl mx-auto mb-8 p-6 bg-white/70 backdrop-blur-sm rounded-lg shadow-sm border border-border-light">
+                <h3 class="text-xl font-serif text-text-primary mb-4">Filter by Color:</h3>
+                <div id="color-filters" class="flex flex-wrap gap-3 mb-6"></div>
+
+                <h3 class="text-xl font-serif text-text-primary mb-4">Filter by Category:</h3>
+                <div id="category-filters" class="flex flex-wrap gap-3 mb-6"></div>
+
+                <h3 class="text-xl font-serif text-text-primary mb-4">Filter by Date:</h3>
+                <div id="date-filters" class="flex flex-wrap gap-3 mb-6"></div>
+
+                <h3 class="text-xl font-serif text-text-primary mb-4">Sort by:</h3>
+                <div id="sort-filters" class="flex flex-wrap gap-3"></div>
+            </div>
+
+            <div id="letter-archive-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            <div id="empty-state" class="text-center text-text-secondary text-xl py-12 hidden">
+                No letters found. Try another name or color.
+            </div>
+        </section>
+
+        <!-- Letter Detail View -->
+        <section id="letter-detail-view" class="view-transition hidden-view flex justify-center items-center py-8">
+            <div id="letter-detail-content" class="letter-detail-paper p-8 md:p-12 max-w-3xl w-full mx-auto relative overflow-hidden">
+                <button class="absolute top-4 left-4 text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('browse')">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    <span class="sr-only">Back to archive</span>
+                </button>
+                <div class="text-center mb-8">
+                    <p class="text-lg font-serif mb-2">To: <span id="detail-to" class="font-bold"></span></p>
+                </div>
+                <p id="detail-text" class="font-serif text-lg leading-relaxed whitespace-pre-wrap mb-8"></p>
+                <div class="text-right text-text-secondary">
+                    <p id="detail-signature" class="font-serif text-lg mb-1"></p>
+                    <p id="detail-submitted" class="text-sm"></p>
+                </div>
+                <div class="flex flex-col items-center mt-12">
+                    <div class="flex flex-wrap justify-center gap-3">
+                        <button class="bg-warm-beige text-text-primary font-medium py-2 px-6 rounded-full shadow-sm hover:bg-cream transition-colors min-h-[44px]" onclick="showRandomLetterDetail()">
+                            Another letter
+                        </button>
+                        <button class="bg-dusty-rose text-white font-medium py-2 px-6 rounded-full shadow-sm hover:bg-terracotta transition-colors min-h-[44px]" onclick="navigate('write')">
+                            Write your own
+                        </button>
+                        <button id="report-letter-button" class="bg-pale-blue text-text-primary font-medium py-2 px-6 rounded-full shadow-sm hover:bg-powder-blue transition-colors min-h-[44px]" data-letter-id="">
+                            Report This Letter
+                        </button>
+                    </div>
+                    <div class="flex flex-wrap justify-center gap-3 mt-3">
+                        <button type="button" id="copy-link-button" class="bg-cream text-text-primary text-sm font-medium py-2 px-5 rounded-full shadow-sm hover:bg-warm-beige transition-colors min-h-[44px]">Copy Link</button>
+                        <button type="button" id="share-button" class="hidden bg-cream text-text-primary text-sm font-medium py-2 px-5 rounded-full shadow-sm hover:bg-warm-beige transition-colors min-h-[44px]">Share</button>
+                        <button type="button" id="add-to-collection-button" class="hidden bg-cream text-text-primary text-sm font-medium py-2 px-5 rounded-full shadow-sm hover:bg-warm-beige transition-colors min-h-[44px]">Add to a collection</button>
+                    </div>
+                    <div id="add-to-collection-box" class="hidden mt-3 flex flex-wrap justify-center gap-2 items-center">
+                        <select id="add-to-collection-select" class="p-2 rounded-md border border-border-light bg-white/70 min-h-[44px]"></select>
+                        <button type="button" id="add-to-collection-confirm" class="bg-dusty-rose text-white text-sm font-medium py-2 px-5 rounded-full min-h-[44px]">Add</button>
+                    </div>
+                    <div id="report-message" class="text-sm text-text-secondary mt-4 hidden max-w-md text-center"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Letter Unavailable View -->
+        <section id="unavailable-view" class="view-transition hidden-view flex flex-col items-center justify-center text-center min-h-[calc(100vh-160px)]">
+            <h2 class="text-3xl font-serif text-text-primary mb-4">This letter is no longer available.</h2>
+            <p class="text-lg text-text-secondary mb-8 max-w-xl">It may have been removed from the archive.</p>
+            <div class="flex flex-wrap justify-center gap-3">
+                <button class="bg-warm-beige text-text-primary font-medium py-3 px-8 rounded-full shadow-md hover:bg-cream transition-colors" onclick="showRandomLetterDetail()">Read a letter</button>
+                <button class="bg-dusty-rose text-white font-medium py-3 px-8 rounded-full shadow-md hover:bg-terracotta transition-colors" onclick="navigate('home')">Return home</button>
+            </div>
+        </section>
+
+        <!-- Collection View -->
+        <section id="collection-view" class="view-transition hidden-view py-8">
+            <div class="max-w-3xl mx-auto text-center mb-8">
+                <p class="text-sm uppercase tracking-wide text-text-secondary mb-2">In memory</p>
+                <h2 id="collection-name" class="text-4xl font-serif text-text-primary mb-2"></h2>
+                <p id="collection-dates" class="text-lg text-text-secondary mb-4"></p>
+                <p id="collection-description" class="text-lg text-text-secondary whitespace-pre-wrap mb-6"></p>
+                <div class="flex flex-wrap justify-center gap-3">
+                    <button type="button" id="collection-copy-link" class="bg-cream text-text-primary text-sm font-medium py-2 px-5 rounded-full shadow-sm hover:bg-warm-beige transition-colors min-h-[44px]">Copy Link</button>
+                    <button type="button" id="collection-share" class="hidden bg-cream text-text-primary text-sm font-medium py-2 px-5 rounded-full shadow-sm hover:bg-warm-beige transition-colors min-h-[44px]">Share</button>
+                </div>
+                <p id="collection-link-msg" class="text-sm text-text-secondary mt-2 hidden"></p>
+            </div>
+            <div id="collection-letters" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            <p id="collection-empty" class="text-center text-text-secondary text-xl py-12 hidden"></p>
+        </section>
+
+        <!-- Write a Letter View -->
+        <section id="write-view" class="view-transition hidden-view py-8 flex flex-col items-center">
+            <h2 class="text-4xl font-serif text-text-primary mb-4 text-center">Write what you never said.</h2>
+            <p class="text-xl text-text-secondary mb-8 text-center max-w-2xl">
+                You don't have to send it. You can simply let it exist.
+            </p>
+            <form id="write-letter-form" class="write-letter-form p-5 sm:p-8 md:p-12 max-w-3xl w-full mx-auto relative">
+                <div class="mb-6">
+                    <label for="write-to" class="block text-lg font-serif text-text-primary mb-2">To:</label>
+                    <input type="text" id="write-to" placeholder="Who is this letter for?" class="w-full p-3 rounded-md border border-border-light focus:ring-2 focus:ring-dusty-rose focus:border-dusty-rose bg-white/70 backdrop-blur-sm">
+                </div>
+                <div class="mb-6">
+                    <label for="write-text" class="block text-lg font-serif text-text-primary mb-2">Letter:</label>
+                    <textarea id="write-text" placeholder="Dear..." rows="10" class="w-full p-3 rounded-md border border-border-light focus:ring-2 focus:ring-dusty-rose focus:border-dusty-rose bg-white/70 backdrop-blur-sm"></textarea>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mt-2">
+                        <p id="draft-status" class="text-sm text-text-secondary"></p>
+                        <div class="flex gap-2">
+                            <button type="button" id="draft-save" class="bg-warm-beige text-text-primary text-sm font-medium py-2 px-5 rounded-full shadow-sm hover:bg-cream transition-colors min-h-[44px]">Save draft</button>
+                            <button type="button" id="draft-new" class="bg-cream text-text-primary text-sm font-medium py-2 px-5 rounded-full shadow-sm hover:bg-warm-beige transition-colors min-h-[44px]">New letter</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <label for="write-signature" class="block text-lg font-serif text-text-primary mb-2">Sign your letter (optional):</label>
+                    <input type="text" id="write-signature" placeholder="Your name, initials, nickname, or 'Anonymous'" class="w-full p-3 rounded-md border border-border-light focus:ring-2 focus:ring-dusty-rose focus:border-dusty-rose bg-white/70 backdrop-blur-sm">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-lg font-serif text-text-primary mb-2">Choose a color:</label>
+                    <div id="color-picker" class="flex flex-wrap gap-3"></div>
+                    <input type="hidden" id="selected-color" value="ivory">
+                </div>
+                <div class="mb-8">
+                    <label for="write-category" class="block text-lg font-serif text-text-primary mb-2">Category:</label>
+                    <select id="write-category" class="w-full p-3 rounded-md border border-border-light focus:ring-2 focus:ring-dusty-rose focus:border-dusty-rose bg-white/70 backdrop-blur-sm">
+                        <option value="Love">Love</option>
+                        <option value="Friendship">Friendship</option>
+                        <option value="Family">Family</option>
+                        <option value="Goodbye">Goodbye</option>
+                        <option value="Regret">Regret</option>
+                        <option value="Gratitude">Gratitude</option>
+                        <option value="Forgiveness">Forgiveness</option>
+                        <option value="Hope">Hope</option>
+                        <option value="Missing someone">Missing someone</option>
+                        <option value="Myself">Myself</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <p class="text-sm text-text-secondary mb-6">
+                    Privacy notice: Your letter will be published anonymously. Please don't include personal information you don't want publicly visible. If you're signed in, the letter is privately linked to your account so only you can find it there; that link is never shown publicly.
+                </p>
+                <button type="submit" class="w-full bg-dusty-rose text-white font-medium py-3 px-8 rounded-full shadow-md hover:bg-terracotta transition-colors">
+                    Send it into the archive
+                </button>
+            </form>
+        </section>
+
+        <!-- Confirmation View -->
+        <section id="confirmation-view" class="view-transition hidden-view flex flex-col items-center justify-center text-center min-h-[calc(100vh-160px)]">
+            <h2 class="text-4xl font-serif text-text-primary mb-4">Your letter has a place now.</h2>
+            <p class="text-xl text-text-secondary mb-8 max-w-2xl">
+                You didn't have to send it. You just had to let it exist.
+            </p>
+            <div id="submitted-letter-preview" class="letter-card p-6 w-full max-w-md mb-8"></div>
+            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                <button class="bg-warm-beige text-text-primary font-medium py-3 px-8 rounded-full shadow-md hover:bg-cream transition-colors" onclick="showRandomLetterDetail()">
+                    Read another letter
+                </button>
+                <button class="bg-dusty-rose text-white font-medium py-3 px-8 rounded-full shadow-md hover:bg-terracotta transition-colors" onclick="navigate('home')">
+                    Return home
+                </button>
+            </div>
+        </section>
+
+        <!-- Account View (optional) -->
+        <section id="account-view" class="view-transition hidden-view py-8 max-w-3xl mx-auto">
+            <h2 class="text-4xl font-serif text-text-primary mb-4 text-center">Your Account</h2>
+            <p class="text-lg text-text-secondary mb-8 text-center">Completely optional. An account only lets you privately see the letters you've sent. Your letters always appear publicly exactly the same way, and no one else can see they're yours.</p>
+            <form id="account-auth-form" class="write-letter-form p-8 md:p-12 max-w-md w-full mx-auto relative hidden">
+                <label for="account-email-input" class="block text-lg font-serif text-text-primary mb-2">Email</label>
+                <input type="email" id="account-email-input" required class="w-full p-3 mb-4 rounded-md border border-border-light focus:ring-2 focus:ring-dusty-rose focus:border-dusty-rose bg-white/70">
+                <label for="account-password-input" class="block text-lg font-serif text-text-primary mb-2">Password</label>
+                <input type="password" id="account-password-input" required minlength="8" class="w-full p-3 mb-4 rounded-md border border-border-light focus:ring-2 focus:ring-dusty-rose focus:border-dusty-rose bg-white/70">
+                <p id="account-auth-message" class="text-sm text-text-secondary mb-4 hidden"></p>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button type="submit" id="account-signin" class="flex-1 bg-dusty-rose text-white font-medium py-2 px-6 rounded-full shadow-sm hover:bg-terracotta transition-colors min-h-[44px]">Sign in</button>
+                    <button type="button" id="account-signup" class="flex-1 bg-warm-beige text-text-primary font-medium py-2 px-6 rounded-full shadow-sm hover:bg-cream transition-colors min-h-[44px]">Create account</button>
+                </div>
+                <button type="button" id="account-forgot" class="mt-4 w-full text-sm text-text-secondary underline min-h-[44px]">Forgot your password?</button>
+            </form>
+            <form id="account-reset-form" class="write-letter-form p-8 md:p-12 max-w-md w-full mx-auto relative hidden">
+                <h3 class="text-2xl font-serif text-text-primary mb-4">Choose a new password</h3>
+                <label for="account-new-password" class="block text-lg font-serif text-text-primary mb-2">New password</label>
+                <input type="password" id="account-new-password" required minlength="8" autocomplete="new-password" class="w-full p-3 mb-4 rounded-md border border-border-light focus:ring-2 focus:ring-dusty-rose bg-white/70">
+                <p id="account-reset-message" class="text-sm text-text-secondary mb-4 hidden"></p>
+                <button type="submit" class="w-full bg-dusty-rose text-white font-medium py-2 px-6 rounded-full shadow-sm hover:bg-terracotta transition-colors min-h-[44px]">Save new password</button>
+            </form>
+            <div id="account-signed-in" class="hidden">
+                <div class="bg-white/70 backdrop-blur-sm p-6 rounded-lg shadow-sm border border-border-light mb-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+                        <div class="text-center sm:text-left">
+                            <p class="text-text-secondary">Signed in as <span id="account-email" class="font-medium text-text-primary"></span></p>
+                            <p id="account-verified" class="text-sm mt-1"></p>
+                        </div>
+                        <button type="button" id="account-signout" class="bg-warm-beige text-text-primary font-medium py-2 px-6 rounded-full shadow-sm hover:bg-cream transition-colors min-h-[44px]">Sign out</button>
+                    </div>
+                    <p id="account-banned" class="hidden text-sm text-terracotta mt-3">This account can no longer submit letters or create collections.</p>
+                </div>
+                <div class="flex flex-wrap gap-2 mb-6 justify-center" id="account-tabs">
+                    <button type="button" data-tab="letters" class="account-tab px-4 py-2 rounded-full text-sm font-medium border border-border-light min-h-[44px]">My Letters</button>
+                    <button type="button" data-tab="drafts" class="account-tab px-4 py-2 rounded-full text-sm font-medium border border-border-light min-h-[44px]">My Drafts</button>
+                    <button type="button" data-tab="collections" class="account-tab px-4 py-2 rounded-full text-sm font-medium border border-border-light min-h-[44px]">My Collections</button>
+                    <button type="button" data-tab="settings" class="account-tab px-4 py-2 rounded-full text-sm font-medium border border-border-light min-h-[44px]">Account settings</button>
+                </div>
+                <div data-panel="letters" class="account-panel">
+                    <p class="text-sm text-text-secondary mb-4">Only you can see this list. Letters you sent before signing in aren't linked to your account.</p>
+                    <div id="account-letters" class="space-y-4"></div>
+                </div>
+                <div data-panel="drafts" class="account-panel hidden">
+                    <p class="text-sm text-text-secondary mb-4">Drafts are private and never published until you send them.</p>
+                    <div id="account-drafts" class="space-y-4"></div>
+                </div>
+                <div data-panel="collections" class="account-panel hidden">
+                    <p class="text-sm text-text-secondary mb-4">Group published letters into a memorial page anyone can visit by link. Your account is never shown on it.</p>
+                    <form id="collection-form" class="bg-white/70 p-6 rounded-lg border border-border-light mb-6 space-y-3">
+                        <input type="hidden" id="collection-edit-id">
+                        <input type="text" id="collection-form-name" required maxlength="200" placeholder="Name (e.g. For Grandma Rose)" class="w-full p-3 rounded-md border border-border-light bg-white/70">
+                        <input type="text" id="collection-form-dates" maxlength="200" placeholder="Dates (optional, e.g. 1938 – 2024)" class="w-full p-3 rounded-md border border-border-light bg-white/70">
+                        <textarea id="collection-form-description" maxlength="5000" rows="3" placeholder="Description (optional)" class="w-full p-3 rounded-md border border-border-light bg-white/70"></textarea>
+                        <div class="flex gap-2 justify-end">
+                            <button type="button" id="collection-form-cancel" class="hidden bg-warm-beige text-text-primary text-sm font-medium py-2 px-5 rounded-full min-h-[44px]">Cancel</button>
+                            <button type="submit" id="collection-form-submit" class="bg-dusty-rose text-white text-sm font-medium py-2 px-5 rounded-full min-h-[44px]">Create collection</button>
+                        </div>
+                        <p id="collection-form-msg" class="text-sm text-text-secondary hidden"></p>
+                    </form>
+                    <p class="text-sm text-text-secondary mb-4">To add letters, open any letter and choose "Add to a collection".</p>
+                    <div id="account-collections" class="space-y-4"></div>
+                </div>
+                <div data-panel="settings" class="account-panel hidden space-y-6">
+                    <form id="password-change-form" class="bg-white/70 p-6 rounded-lg border border-border-light space-y-3">
+                        <h3 class="text-xl font-serif">Change password</h3>
+                        <input type="password" id="pw-current" required autocomplete="current-password" placeholder="Current password" class="w-full p-3 rounded-md border border-border-light bg-white/70">
+                        <input type="password" id="pw-new" required minlength="8" autocomplete="new-password" placeholder="New password (8+ characters)" class="w-full p-3 rounded-md border border-border-light bg-white/70">
+                        <p id="pw-msg" class="text-sm text-text-secondary hidden"></p>
+                        <button type="submit" class="bg-dusty-rose text-white text-sm font-medium py-2 px-5 rounded-full min-h-[44px]">Update password</button>
+                    </form>
+                    <div id="resend-box" class="hidden bg-white/70 p-6 rounded-lg border border-border-light">
+                        <h3 class="text-xl font-serif mb-2">Email not verified</h3>
+                        <button type="button" id="resend-verification" class="bg-warm-beige text-text-primary text-sm font-medium py-2 px-5 rounded-full min-h-[44px]">Resend verification email</button>
+                        <p id="resend-msg" class="text-sm text-text-secondary mt-2 hidden"></p>
+                    </div>
+                    <div class="bg-white/70 p-6 rounded-lg border border-border-light">
+                        <h3 class="text-xl font-serif mb-2">Delete account</h3>
+                        <p class="text-sm text-text-secondary mb-3">Your drafts and collections are deleted. Letters you published stay in the archive anonymously and are no longer linked to you. Type DELETE to confirm.</p>
+                        <input type="text" id="delete-confirm" placeholder="DELETE" class="w-full p-3 mb-3 rounded-md border border-border-light bg-white/70">
+                        <p id="delete-msg" class="text-sm text-terracotta hidden mb-2"></p>
+                        <button type="button" id="delete-account" class="bg-terracotta text-white text-sm font-medium py-2 px-5 rounded-full min-h-[44px]">Delete my account</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- About View -->
+        <section id="about-view" class="view-transition hidden-view py-8 max-w-3xl mx-auto">
+            <h2 class="text-4xl font-serif text-text-primary mb-8 text-center">About Remember Us</h2>
+            <div class="bg-white/70 backdrop-blur-sm p-8 rounded-lg shadow-sm border border-border-light text-lg leading-relaxed">
+                <p class="mb-4">Everyone has something they never said. Remember Us is a collection of letters written to people, memories, places, past versions of ourselves, or individuals we may never speak to again. You can sign your letter with a first name, initials, or remain anonymous.</p>
+                <p class="mb-4">This platform provides a quiet space for those unspoken words to exist, to be released into a public archive without the need for a recipient. It's a sanctuary for thoughts, feelings, and stories that were never meant to be sent, but deserved to be written.</p>
+                <h3 class="text-2xl font-serif text-text-primary mt-6 mb-3">Community Guidelines</h3>
+                <ul class="list-disc list-inside mb-4 space-y-1 text-text-secondary">
+                    <li>Be respectful and mindful of others' experiences.</li>
+                    <li>No hate speech, harassment, or personal attacks.</li>
+                    <li>Signatures are optional; you may use a first name, initials, or 'Anonymous'. Please do not include full names or other personally identifiable information.</li>
+                    <li>This is a space for introspection and release, not for public shaming or explicit content.</li>
+                </ul>
+                <h3 class="text-2xl font-serif text-text-primary mt-6 mb-3">Privacy Information</h3>
+                <p class="mb-4">All letters submitted to Remember Us are published with your chosen signature (first name, initials, or 'Anonymous'). We do not collect any personal data that could identify you. The content of your letter is public once submitted, so please ensure it does not contain any information you wish to keep private.</p>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-paper-bg/80 backdrop-blur-sm border-t border-border-light py-6 text-center text-text-secondary text-sm">
+        <p>&copy; <span id="current-year"></span> Remember Us. A quiet place for unspoken words.</p>
+    </footer>
+
+    <script defer>
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        const COLORS = {
+            'ivory': '#FDFBF6',
+            'cream': '#F8F5EC',
+            'warm-beige': '#EFEADF',
+            'dusty-rose': '#DDC6C6',
+            'soft-pink': '#F4DEDC',
+            'sage': '#C6DBC6',
+            'pale-blue': '#DDEBF2',
+            'powder-blue': '#BBDDEE',
+            'lavender': '#E0DDF2',
+            'muted-peach': '#F5E0D9',
+            'soft-yellow': '#F9F7E0',
+            'pale-green': '#E0F2E0',
+            'terracotta': '#D9A18B',
+        };
+
+        const CATEGORIES = [
+            'All', 'Love', 'Friendship', 'Family', 'Goodbye', 'Regret', 'Gratitude', 'Forgiveness', 'Hope', 'Missing someone', 'Myself', 'Other'
+        ];
+
+        const initialSampleLetters = [
+            {
+                id: '1',
+                to: 'Emma',
+                text: "I don't know if you'll ever read this, but there are still days when I think about that summer. The way the sun felt on our skin, the endless laughter, the quiet moments of understanding. I miss you, and I hope you're happy wherever you are.",
+                signature: 'A',
+                submitted: '2023-09-26',
+                color: 'dusty-rose',
+                category: 'Missing someone'
+            },
+            {
+                id: '2',
+                to: 'My Past Self',
+                text: "It's okay to let go. You don't have to carry all that weight. Forgive yourself for the mistakes, and know that you're doing your best. The future is brighter than you think.",
+                signature: 'Future You',
+                submitted: '2023-10-15',
+                color: 'sage',
+                category: 'Myself'
+            },
+            {
+                id: '3',
+                to: 'Grandma',
+                text: "I wish I had told you how much your stories meant to me. Every time I smell fresh-baked bread, I think of your kitchen. Thank you for everything, I carry your love with me.",
+                signature: 'Your Grandchild',
+                submitted: '2023-11-01',
+                color: 'soft-yellow',
+                category: 'Gratitude'
+            },
+            {
+                id: '4',
+                to: 'The one that got away',
+                text: "Sometimes I wonder what if. What if we had tried harder, or been a little braver. Life took us on different paths, but I hope you found what you were looking for. No regrets, just a quiet 'what if'.",
+                signature: 'Someone who remembers',
+                submitted: '2023-12-05',
+                color: 'pale-blue',
+                category: 'Regret'
+            },
+            {
+                id: '5',
+                to: 'My best friend',
+                text: "Even though we grew apart, I'll always cherish the memories. You taught me so much about loyalty and laughter. I hope life is treating you kindly, and that you're surrounded by joy.",
+                signature: 'Your old pal',
+                submitted: '2024-01-20',
+                color: 'cream',
+                category: 'Friendship'
+            },
+            {
+                id: '6',
+                to: 'The universe',
+                text: "I'm still here, still hoping, still dreaming. Send me a sign, a little spark of magic. I'm ready for whatever comes next, with an open heart and a hopeful spirit.",
+                signature: 'A seeker',
+                submitted: '2024-02-14',
+                color: 'lavender',
+                category: 'Hope'
+            },
+            {
+                id: '7',
+                to: 'My fear',
+                text: "I'm writing this to tell you that you don't control me anymore. I'm taking back my power, one brave step at a time. You can whisper, but I won't listen. I choose courage.",
+                signature: 'Unchained',
+                submitted: '2024-03-01',
+                color: 'terracotta',
+                category: 'Myself'
+            },
+            {
+                id: '8',
+                to: 'My future self',
+                text: "Don't forget to laugh. Don't forget to love. Don't forget to be kind, especially to yourself. And please, remember to look up at the stars every now and then. They're still there.",
+                signature: 'Your younger self',
+                submitted: '2024-03-20',
+                color: 'powder-blue',
+                category: 'Hope'
+            },
+            {
+                id: '9',
+                to: 'The ocean',
+                text: "Your vastness always humbles me. I wish I could tell you all my secrets, let them be carried away by your tides. Thank you for being a constant, a reminder of something bigger than myself.",
+                signature: 'A tiny human',
+                submitted: '2024-04-05',
+                color: 'pale-green',
+                category: 'Other'
+            },
+            {
+                id: '10',
+                to: 'My silence',
+                text: "You've been a heavy companion, but I'm learning to find peace in your quiet. Sometimes, not speaking is the loudest message. I'm listening to what you have to say now.",
+                signature: 'Finding my voice',
+                submitted: '2024-04-22',
+                color: 'muted-peach',
+                category: 'Myself'
+            }
+        ];
+
+        // Letters are loaded from the shared archive (only public, privacy-safe fields).
+        let letters = [];
+
+        function escapeHtml(v) {
+            return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        function mapLetter(r) {
+            return { id: String(r.id), to: r.to_name, text: r.body, signature: r.signature, submitted: r.created_at, color: r.color, category: r.category };
+        }
+
+        async function loadLetters() {
+            const { data, error } = await window.sb.from('public_letters').select('*').order('created_at', { ascending: false });
+            if (error) { console.error(error); return; }
+            letters = data.map(mapLetter);
+            renderFeaturedLetters();
+            if (currentView === 'browse') renderAllLettersForBrowseView();
+            if (currentView === 'search') renderLetters();
+        }
+
+        let currentFilters = {
+            search: '',
+            colors: [],
+            category: 'All',
+            date: 'All',
+            sort: 'Recently submitted' // Added sort option
+        };
+
+        let currentView = 'home';
+
+        const views = {
+            'home': document.getElementById('home-view'),
+            'browse': document.getElementById('browse-view'), // New view for browsing all letters
+            'search': document.getElementById('search-view'), // Renamed from 'explore-view'
+            'detail': document.getElementById('letter-detail-view'),
+            'write': document.getElementById('write-view'),
+            'confirmation': document.getElementById('confirmation-view'),
+            'about': document.getElementById('about-view'),
+            'account': document.getElementById('account-view'),
+            'unavailable': document.getElementById('unavailable-view'),
+            'collection': document.getElementById('collection-view'),
+        };
+
+        // Client-side storage for reported letters (for demonstration only)
+        let reportedLettersStatus = JSON.parse(localStorage.getItem('reportedLettersStatus')) || {};
+
+        function navigate(viewId, options = {}) {
+            // Prevent re-navigation to the same view unless forced or specific search focus
+            if (currentView === viewId && !options.forceReload && !(viewId === 'search' && options.focusSearch)) {
+                return;
+            }
+
+            // Hide current view with transition
+            if (views[currentView]) {
+                views[currentView].classList.remove('active-view');
+                views[currentView].classList.add('hidden-view');
+            }
+
+            const searchInputContainer = document.getElementById('search-input-container');
+            const searchInput = document.getElementById('search-input');
+
+            // Reset search state if leaving the search view
+            if (currentView === 'search' && viewId !== 'search') {
+                if (searchInputContainer) {
+                    searchInputContainer.classList.add('hidden');
+                    currentFilters.search = ''; // Clear search filter
+                    searchInput.value = '';     // Clear search input field
+                }
+            }
+
+            // Show new view with transition
+            currentView = viewId;
+            const targetView = views[viewId];
+            if (targetView) {
+                targetView.classList.remove('hidden-view');
+                targetView.classList.add('active-view');
+                // Scroll to top of the main content area
+                document.getElementById('app-content').scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            // Specific actions for views
+            if (viewId === 'browse') {
+                renderAllLettersForBrowseView(); // Render all letters for the new browse view
+            } else if (viewId === 'search') {
+                if (searchInputContainer) {
+                    searchInputContainer.classList.remove('hidden'); // Ensure search input is visible for search view
+                    if (options.focusSearch) {
+                        searchInput.focus();
+                    }
+                }
+                renderLetters(); // Render letters for the search view with filters
+            } else if (viewId === 'account') {
+                renderAccount();
+            }
+
+            // Update URL hash for basic routing
+            if (!options.noPush) history.pushState(null, '', `#${options.hash || viewId}`);
+            // Close mobile menu if open
+            document.getElementById('mobile-menu').classList.add('hidden');
+        }
+
+        // Deep links: #letter/<id>, #collection/<id>, or a view name
+        function routeFromHash(hash, noPush) {
+            if (hash.startsWith('letter/')) return showLetterDetail(decodeURIComponent(hash.slice(7)), { noPush });
+            if (hash.startsWith('collection/')) return window.showCollection(decodeURIComponent(hash.slice(11)), { noPush });
+            if (hash === 'explore') return navigate('browse', { noPush });
+            if (hash && views[hash] && hash !== 'detail' && hash !== 'collection') return navigate(hash, { noPush, forceReload: true });
+            navigate('home', { noPush });
+        }
+
+        // Handle browser back/forward buttons
+        window.addEventListener('popstate', () => {
+            routeFromHash(window.location.hash.substring(1), true);
+        });
+
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', () => {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        });
+
+        // --- Letter Rendering Functions ---
+
+        function createLetterCard(letter) {
+            const card = document.createElement('div');
+            card.className = `letter-card p-6 md:p-8 cursor-pointer hover:scale-[1.01] transition-transform duration-200 ease-in-out flex flex-col justify-between h-full`;
+            card.style.setProperty('--letter-color', COLORS[letter.color] || COLORS.ivory);
+            card.innerHTML = `
+                <div>
+                    <p class="text-sm text-text-secondary mb-2">To: <span class="font-medium">${escapeHtml(letter.to)}</span></p>
+                    <p class="font-serif text-lg leading-relaxed line-clamp-6 mb-4">${escapeHtml(letter.text)}</p>
+                </div>
+                <div class="text-right text-text-secondary text-sm mt-4">
+                    <p class="mb-1">— ${escapeHtml(letter.signature || 'Anonymous')}</p>
+                    <p>Submitted ${formatDate(letter.submitted)}</p>
+                </div>
+            `;
+            card.addEventListener('click', () => showLetterDetail(letter.id));
+            return card;
+        }
+
+        function renderFeaturedLetters() {
+            const featuredContainer = document.getElementById('featured-letters');
+            featuredContainer.innerHTML = '';
+            const shuffled = [...letters].sort(() => 0.5 - Math.random());
+            const featured = shuffled.slice(0, 3); // Show 3 random letters
+            featured.forEach(letter => {
+                featuredContainer.appendChild(createLetterCard(letter));
+            });
+        }
+
+        function renderAllLettersForBrowseView() {
+            const grid = document.getElementById('all-letters-grid');
+            grid.innerHTML = '';
+            const emptyState = document.getElementById('browse-empty-state');
+
+            if (letters.length === 0) {
+                emptyState.classList.remove('hidden');
+                grid.classList.add('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                grid.classList.remove('hidden');
+                // Sort letters for consistent display, e.g., by most recent
+                const sortedLetters = [...letters].sort((a, b) => new Date(b.submitted) - new Date(a.submitted));
+                sortedLetters.forEach(letter => {
+                    grid.appendChild(createLetterCard(letter));
+                });
+            }
+        }
+
+        function renderLetters() {
+            // This function is now specifically for the search-view, applying filters
+            const grid = document.getElementById('letter-archive-grid');
+            grid.innerHTML = '';
+            const emptyState = document.getElementById('empty-state');
+
+            let filteredLetters = applyFilters(letters);
+
+            if (filteredLetters.length === 0) {
+                emptyState.classList.remove('hidden');
+                grid.classList.add('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                grid.classList.remove('hidden');
+                filteredLetters.forEach(letter => {
+                    grid.appendChild(createLetterCard(letter));
+                });
+            }
+        }
+
+        function applyFilters(allLetters) {
+            let filtered = [...allLetters];
+
+            // Search filter only applies if search input is visible and has a value
+            const searchInputContainer = document.getElementById('search-input-container');
+            if (searchInputContainer && !searchInputContainer.classList.contains('hidden') && currentFilters.search) {
+                const searchTerm = currentFilters.search.trim().toLowerCase();
+                filtered = filtered.filter(letter =>
+                    letter.to.toLowerCase().includes(searchTerm) || letter.text.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            // Color filter
+            if (currentFilters.colors.length > 0) {
+                filtered = filtered.filter(letter =>
+                    currentFilters.colors.includes(letter.color)
+                );
+            }
+
+            // Category filter
+            if (currentFilters.category !== 'All') {
+                filtered = filtered.filter(letter =>
+                    letter.category === currentFilters.category
+                );
+            }
+
+            // Date filter
+            if (currentFilters.date !== 'All') {
+                const today = new Date();
+                filtered = filtered.filter(letter => {
+                    const submittedDate = new Date(letter.submitted);
+                    if (currentFilters.date === 'Today') {
+                        return submittedDate.toDateString() === today.toDateString();
+                    } else if (currentFilters.date === 'This week') {
+                        const oneWeekAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7);
+                        return submittedDate >= oneWeekAgo;
+                    } else if (currentFilters.date === 'This month') {
+                        return submittedDate.getMonth() === today.getMonth() && submittedDate.getFullYear() === today.getFullYear();
+                    } else if (currentFilters.date === 'Earlier') {
+                        const oneMonthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+                        return submittedDate < oneMonthAgo;
+                    }
+                    return true;
+                });
+            }
+
+            // Sorting
+            if (currentFilters.sort === 'Recently submitted') {
+                filtered.sort((a, b) => new Date(b.submitted) - new Date(a.submitted));
+            } else if (currentFilters.sort === 'Oldest') {
+                filtered.sort((a, b) => new Date(a.submitted) - new Date(b.submitted));
+            } else if (currentFilters.sort === 'Random') {
+                filtered.sort(() => 0.5 - Math.random());
+            }
+
+            return filtered;
+        }
+
+        async function showLetterDetail(id, opts = {}) {
+            id = String(id);
+            let letter = letters.find(l => l.id === id);
+            if (!letter) {
+                // Deep link: look the letter up in the public archive only (published letters, public fields)
+                const { data } = await window.sb.from('public_letters').select('*').eq('id', id).maybeSingle();
+                if (data) { letter = mapLetter(data); if (!letters.some(l => l.id === letter.id)) letters.push(letter); }
+            }
+            if (!letter) {
+                navigate('unavailable', { hash: 'letter/' + encodeURIComponent(id), noPush: opts.noPush, forceReload: true });
+                return;
+            }
+
+            document.getElementById('detail-to').textContent = letter.to;
+            document.getElementById('detail-text').textContent = letter.text;
+            document.getElementById('detail-signature').textContent = `— ${letter.signature || 'Anonymous'}`;
+            document.getElementById('detail-submitted').textContent = `Submitted ${formatDate(letter.submitted)}`;
+            document.getElementById('letter-detail-content').style.setProperty('--letter-color', COLORS[letter.color] || COLORS.ivory);
+
+            const reportButton = document.getElementById('report-letter-button');
+            const reportMessage = document.getElementById('report-message');
+
+            if (reportButton) {
+                reportButton.dataset.letterId = letter.id; // Store current letter ID
+                reportMessage.classList.add('hidden'); // Hide any previous message
+
+                {
+                    reportButton.textContent = 'Report This Letter';
+                    reportButton.disabled = false;
+                    reportButton.classList.add('hover:bg-powder-blue'); // Add hover effect
+                    reportButton.classList.remove('opacity-70', 'cursor-not-allowed');
+                }
+            }
+            document.getElementById('add-to-collection-box').classList.add('hidden');
+            if (window.refreshCollectionButton) window.refreshCollectionButton();
+
+            navigate('detail', { hash: 'letter/' + encodeURIComponent(letter.id), noPush: opts.noPush, forceReload: true });
+        }
+
+        // Public permanent link to a letter (works on GitHub Pages and the Lovable site)
+        function letterLink(id) {
+            return window.location.origin + window.location.pathname + '#letter/' + encodeURIComponent(id);
+        }
+
+        async function showRandomLetterDetail() {
+            if (letters.length === 0) await loadLetters();
+            const currentId = currentView === 'detail' ? document.getElementById('report-letter-button').dataset.letterId : null;
+            const availableLetters = letters.filter(l => l.id !== currentId);
+            if (availableLetters.length === 0) return;
+            const randomLetter = availableLetters[Math.floor(Math.random() * availableLetters.length)];
+            showLetterDetail(randomLetter.id);
+        }
+
+        // --- Filter UI Rendering (for Search View) ---
+
+        function renderColorFilters() {
+            const container = document.getElementById('color-filters');
+            container.innerHTML = '';
+            Object.entries(COLORS).forEach(([name, hex]) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = `w-8 h-8 rounded-full border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-dusty-rose transition-all`;
+                button.style.backgroundColor = hex;
+                button.title = name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                if (currentFilters.colors.includes(name)) {
+                    button.classList.add('border-dusty-rose', 'ring-2', 'ring-offset-2', 'ring-dusty-rose');
+                }
+                button.addEventListener('click', () => {
+                    if (currentFilters.colors.includes(name)) {
+                        currentFilters.colors = currentFilters.colors.filter(c => c !== name);
+                    } else {
+                        currentFilters.colors.push(name);
+                    }
+                    renderColorFilters(); // Re-render to update active state
+                    renderLetters(); // Re-render letters in search view
+                });
+                container.appendChild(button);
+            });
+        }
+
+        function renderCategoryFilters() {
+            const container = document.getElementById('category-filters');
+            container.innerHTML = '';
+            CATEGORIES.forEach(category => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = `px-4 py-2 rounded-full text-sm font-medium transition-colors border border-border-light`;
+                if (currentFilters.category === category) {
+                    button.classList.add('bg-dusty-rose', 'text-white', 'hover:bg-terracotta');
+                }
+                else {
+                    button.classList.add('bg-warm-beige', 'text-text-primary', 'hover:bg-cream');
+                }
+                button.textContent = category;
+                button.addEventListener('click', () => {
+                    currentFilters.category = category;
+                    renderCategoryFilters();
+                    renderLetters(); // Re-render letters in search view
+                });
+                container.appendChild(button);
+            });
+        }
+
+        function renderDateFilters() {
+            const container = document.getElementById('date-filters');
+            container.innerHTML = '';
+            const dateOptions = ['All', 'Today', 'This week', 'This month', 'Earlier'];
+            dateOptions.forEach(option => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = `px-4 py-2 rounded-full text-sm font-medium transition-colors border border-border-light`;
+                if (currentFilters.date === option) {
+                    button.classList.add('bg-dusty-rose', 'text-white', 'hover:bg-terracotta');
+                }
+                else {
+                    button.classList.add('bg-warm-beige', 'text-text-primary', 'hover:bg-cream');
+                }
+                button.textContent = option;
+                button.addEventListener('click', () => {
+                    currentFilters.date = option;
+                    renderDateFilters();
+                    renderLetters(); // Re-render letters in search view
+                });
+                container.appendChild(button);
+            });
+        }
+
+        function renderSortFilters() {
+            const container = document.getElementById('sort-filters');
+            container.innerHTML = '';
+            const sortOptions = ['Recently submitted', 'Oldest', 'Random'];
+            sortOptions.forEach(option => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = `px-4 py-2 rounded-full text-sm font-medium transition-colors border border-border-light`;
+                if (currentFilters.sort === option) {
+                    button.classList.add('bg-dusty-rose', 'text-white', 'hover:bg-terracotta');
+                } else {
+                    button.classList.add('bg-warm-beige', 'text-text-primary', 'hover:bg-cream');
+                }
+                button.textContent = option;
+                button.addEventListener('click', () => {
+                    currentFilters.sort = option;
+                    renderSortFilters(); // Re-render to update active state
+                    renderLetters(); // Re-render letters in search view
+                });
+                container.appendChild(button);
+            });
+        }
+
+        // --- Write Letter Form Logic ---
+
+        const writeForm = document.getElementById('write-letter-form');
+        const colorPicker = document.getElementById('color-picker');
+        const selectedColorInput = document.getElementById('selected-color');
+
+        function renderColorPicker() {
+            colorPicker.innerHTML = '';
+            Object.entries(COLORS).forEach(([name, hex]) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = `w-10 h-10 rounded-full border-2 border-transparent focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-dusty-rose transition-all`;
+                button.style.backgroundColor = hex;
+                button.title = name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                if (selectedColorInput.value === name) {
+                    button.classList.add('border-dusty-rose', 'ring-2', 'ring-offset-2', 'ring-dusty-rose');
+                }
+                button.addEventListener('click', () => {
+                    selectedColorInput.value = name;
+                    writeForm.style.setProperty('--letter-color', hex); // Live preview
+                    renderColorPicker(); // Re-render to update active state
+                });
+                colorPicker.appendChild(button);
+            });
+            writeForm.style.setProperty('--letter-color', COLORS[selectedColorInput.value] || COLORS.ivory);
+        }
+
+        function resetWriteForm() {
+            writeForm.reset();
+            selectedColorInput.value = 'ivory'; // Default color
+            renderColorPicker();
+            writeForm.style.setProperty('--letter-color', COLORS.ivory);
+        }
+
+        writeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const newLetter = {
+                id: Date.now().toString(),
+                to: document.getElementById('write-to').value || 'Someone',
+                text: document.getElementById('write-text').value,
+                signature: document.getElementById('write-signature').value || 'Anonymous',
+                submitted: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+                color: document.getElementById('selected-color').value,
+                category: document.getElementById('write-category').value
+            };
+
+            if (!newLetter.text.trim()) {
+                alert('Please write something in your letter!');
+                return;
+            }
+
+            const submitButton = writeForm.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            const { data: saved, error: saveError } = await window.sb.rpc('submit_letter', {
+                _to: newLetter.to, _body: newLetter.text, _signature: newLetter.signature,
+                _color: newLetter.color, _category: newLetter.category
+            });
+            submitButton.disabled = false;
+            if (saveError) {
+                alert(/not allowed/i.test(saveError.message || '') ? 'This account is not allowed to submit letters.' : 'Sorry, your letter could not be saved. Please try again.');
+                return;
+            }
+            newLetter.id = String(saved.id);
+            newLetter.submitted = saved.created_at;
+            letters.unshift(newLetter); // Add to the beginning
+            if (window.onLetterSubmitted) window.onLetterSubmitted();
+
+            // Show confirmation with the new letter
+            const previewContainer = document.getElementById('submitted-letter-preview');
+            previewContainer.innerHTML = `
+                <div>
+                    <p class="text-sm text-text-secondary mb-2">To: <span class="font-medium">${escapeHtml(newLetter.to)}</span></p>
+                    <p class="font-serif text-lg leading-relaxed line-clamp-6 mb-4">${escapeHtml(newLetter.text)}</p>
+                </div>
+                <div class="text-right text-text-secondary text-sm mt-4">
+                    <p class="mb-1">— ${escapeHtml(newLetter.signature || 'Anonymous')}</p>
+                    <p>Submitted ${formatDate(newLetter.submitted)}</p>
+                </div>
+            `;
+            previewContainer.style.setProperty('--letter-color', COLORS[newLetter.color] || COLORS.ivory);
+
+            navigate('confirmation');
+        });
+
+        // --- Utility Functions ---
+
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString(undefined, options);
+        }
+
+        // --- Event Listeners for Search View Filters ---
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            currentFilters.search = e.target.value;
+            renderLetters(); // Re-render letters in search view
+        });
+
+        // --- Report Button Logic ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const reportButton = document.getElementById('report-letter-button');
+            const reportMessage = document.getElementById('report-message');
+
+            if (reportButton) {
+                reportButton.addEventListener('click', () => {
+                    const letterId = reportButton.dataset.letterId;
+                    if (!letterId) return;
+                    openReportModal(letterId);
+                });
+            }
+
+            // Initial rendering calls for filter UI (these are for the search view)
+            renderColorFilters();
+            renderCategoryFilters();
+            renderDateFilters();
+            renderSortFilters();
+
+            // Initial rendering for other views
+            renderFeaturedLetters(); // For home view
+            loadLetters();
+            renderColorPicker(); // For write view
+
+            // Initial navigation based on URL hash (auth links use ?verified=1 / ?reset=1)
+            const params = new URLSearchParams(window.location.search);
+            const initialHash = window.location.hash.substring(1);
+            if (params.has('verified') || params.has('reset') || initialHash.includes('access_token') || initialHash.includes('error_description')) {
+                navigate('account', { forceReload: true });
+            } else {
+                routeFromHash(initialHash, true);
+            }
+        });
+
+    </script>
+<!-- Report Letter Modal -->
+    <div id="report-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/30 px-4" role="dialog" aria-modal="true" aria-labelledby="report-modal-title">
+        <form id="report-form" class="write-letter-form p-6 md:p-8 max-w-lg w-full mx-auto relative max-h-[90vh] overflow-y-auto" style="--letter-color: #FDFBF6;">
+            <h3 id="report-modal-title" class="text-2xl font-serif mb-4">Report This Letter</h3>
+            <div class="mb-4 p-3 rounded-md bg-cream border border-border-light">
+                <p class="text-sm text-text-secondary">Letter being reported</p>
+                <p id="report-letter-title" class="font-serif font-bold"></p>
+                <p id="report-letter-excerpt" class="font-serif text-sm text-text-secondary mt-1"></p>
+                <p class="text-xs text-text-secondary mt-2">Letter ID: <span id="report-letter-id"></span></p>
+            </div>
+            <label for="report-category" class="block text-text-secondary text-sm font-medium mb-2">Report category</label>
+            <select id="report-category" required class="w-full p-3 mb-4 rounded-md border border-border-light focus:ring-2 focus:ring-dusty-rose focus:border-dusty-rose bg-white/70">
+                <option value="">Choose a category...</option>
+                <option>Spam</option>
+                <option>Harassment</option>
+                <option>Inappropriate content</option>
+                <option>Copyright issue</option>
+                <option>False/misleading information</option>
+                <option>Other</option>
+            </select>
+            <label for="report-details" class="block text-text-secondary text-sm font-medium mb-2">Reason / details</label>
+            <textarea id="report-details" rows="5" maxlength="2000" placeholder="Tell us what's wrong with this letter..." class="w-full p-3 mb-2 rounded-md border border-border-light focus:ring-2 focus:ring-dusty-rose focus:border-dusty-rose bg-white/70"></textarea>
+            <p id="report-error" class="text-sm text-terracotta mb-2 hidden"></p>
+            <div class="flex justify-end gap-3 mt-4">
+                <button type="button" id="report-cancel" class="bg-warm-beige text-text-primary font-medium py-2 px-6 rounded-full shadow-sm hover:bg-cream transition-colors">Cancel</button>
+                <button type="submit" id="report-submit" class="bg-dusty-rose text-white font-medium py-2 px-6 rounded-full shadow-sm hover:bg-terracotta transition-colors">Submit Report</button>
+            </div>
+        </form>
+    </div>
+    <script>
+        (function () {
+            const CATEGORIES = ['Spam','Harassment','Inappropriate content','Copyright issue','False/misleading information','Other'];
+            const modal = document.getElementById('report-modal');
+            const form = document.getElementById('report-form');
+            const errEl = document.getElementById('report-error');
+            const submitBtn = document.getElementById('report-submit');
+            let current = null;
+
+            function close() { modal.classList.add('hidden'); modal.classList.remove('flex'); current = null; }
+            window.openReportModal = function (letterId) {
+                const letter = (typeof letters !== 'undefined' ? letters : []).find(l => String(l.id) === String(letterId));
+                if (!letter) return;
+                current = { id: String(letter.id), title: ('To: ' + (letter.to || 'Someone')).slice(0, 300) };
+                document.getElementById('report-letter-title').textContent = current.title;
+                const text = letter.text || '';
+                document.getElementById('report-letter-excerpt').textContent = text.length > 140 ? text.slice(0, 140) + '…' : text;
+                document.getElementById('report-letter-id').textContent = current.id;
+                form.reset(); errEl.classList.add('hidden');
+                submitBtn.disabled = false; submitBtn.textContent = 'Submit Report';
+                modal.classList.remove('hidden'); modal.classList.add('flex');
+            };
+            document.getElementById('report-cancel').addEventListener('click', close);
+            modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && current) close(); });
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!current) return;
+                const category = document.getElementById('report-category').value;
+                const description = document.getElementById('report-details').value.trim().slice(0, 2000);
+                if (!CATEGORIES.includes(category)) { errEl.textContent = 'Please choose a report category.'; errEl.classList.remove('hidden'); return; }
+                submitBtn.disabled = true; submitBtn.textContent = 'Submitting...';
+                try {
+                    const { error } = await window.sb.from('reports').insert({ letter_id: current.id, letter_title: current.title, category, description });
+                    if (error) throw error;
+                    close();
+                    const msg = document.getElementById('report-message');
+                    msg.textContent = 'Thank you. Your report has been submitted and will be reviewed.';
+                    msg.classList.remove('hidden');
+                    setTimeout(() => msg.classList.add('hidden'), 6000);
+                } catch (err) {
+                    errEl.textContent = 'Sorry, your report could not be sent. Please try again.';
+                    errEl.classList.remove('hidden');
+                    submitBtn.disabled = false; submitBtn.textContent = 'Submit Report';
+                }
+            });
+        })();
+    </script>
+    <script>
+        (function () {
+            const sb = window.sb;
+            const $ = (id) => document.getElementById(id);
+            const form = $('account-auth-form');
+            const resetForm = $('account-reset-form');
+            const msg = $('account-auth-message');
+            const signedIn = $('account-signed-in');
+            const baseUrl = window.location.origin + window.location.pathname;
+            let recovering = new URLSearchParams(window.location.search).has('reset');
+            let activeTab = 'letters';
+            let myCollections = [];
+            function say(t) { msg.textContent = t; msg.classList.remove('hidden'); }
+            function note(el, t) { el.textContent = t; el.classList.remove('hidden'); }
+            async function currentUser() { const { data } = await sb.auth.getUser(); return data.user || null; }
+            function fmtTime(d) { return new Date(d).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }); }
+
+            // ---------- Copy link / native share ----------
+            async function copyText(text, btn) {
+                try { await navigator.clipboard.writeText(text); }
+                catch (e) { const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); }
+                const old = btn.textContent; btn.textContent = 'Link copied'; setTimeout(() => { btn.textContent = old; }, 2000);
+            }
+            const canShare = typeof navigator.share === 'function';
+            if (canShare) { $('share-button').classList.remove('hidden'); $('collection-share').classList.remove('hidden'); }
+            $('copy-link-button').addEventListener('click', (e) => copyText(letterLink($('report-letter-button').dataset.letterId), e.currentTarget));
+            $('share-button').addEventListener('click', () => {
+                navigator.share({ title: 'A letter on Remember Us', text: 'An unsent letter from the Remember Us archive.', url: letterLink($('report-letter-button').dataset.letterId) }).catch(() => {});
+            });
+            let currentCollectionId = null;
+            const collectionLink = (id) => baseUrl + '#collection/' + encodeURIComponent(id);
+            $('collection-copy-link').addEventListener('click', (e) => copyText(collectionLink(currentCollectionId), e.currentTarget));
+            $('collection-share').addEventListener('click', () => {
+                navigator.share({ title: $('collection-name').textContent + ' — Remember Us', url: collectionLink(currentCollectionId) }).catch(() => {});
+            });
+
+            // ---------- Public collection page ----------
+            window.showCollection = async function (id, opts = {}) {
+                currentCollectionId = id;
+                const { data: c } = await sb.from('public_collections').select('*').eq('id', id).maybeSingle();
+                const grid = $('collection-letters'); const empty = $('collection-empty');
+                grid.innerHTML = '';
+                if (!c) {
+                    $('collection-name').textContent = 'This collection is no longer available.';
+                    $('collection-dates').textContent = ''; $('collection-description').textContent = '';
+                    empty.classList.add('hidden');
+                } else {
+                    $('collection-name').textContent = c.name;
+                    $('collection-dates').textContent = c.dates || '';
+                    $('collection-description').textContent = c.description || '';
+                    const { data: ls } = await sb.from('public_collection_letters').select('*').eq('collection_id', id).order('added_at', { ascending: true });
+                    (ls || []).forEach(r => {
+                        const l = mapLetter({ id: r.letter_id, to_name: r.to_name, body: r.body, signature: r.signature, created_at: r.created_at, color: r.color, category: r.category });
+                        if (!letters.some(x => x.id === l.id)) letters.push(l);
+                        grid.appendChild(createLetterCard(l));
+                    });
+                    empty.textContent = 'No letters in this collection yet.';
+                    empty.classList.toggle('hidden', (ls || []).length > 0);
+                }
+                navigate('collection', { hash: 'collection/' + encodeURIComponent(id), noPush: opts.noPush, forceReload: true });
+            };
+            async function loadPublicCollections() {
+                const { data } = await sb.from('public_collections').select('*').order('created_at', { ascending: false }).limit(30);
+                const box = $('browse-collections'); const list = $('browse-collections-list');
+                if (!data || !data.length) { box.classList.add('hidden'); return; }
+                box.classList.remove('hidden');
+                list.innerHTML = '';
+                data.forEach(c => {
+                    const card = document.createElement('div');
+                    card.className = 'letter-card p-6 cursor-pointer hover:scale-[1.01] transition-transform';
+                    card.innerHTML = `<p class="font-serif text-xl font-bold mb-1">${escapeHtml(c.name)}</p><p class="text-sm text-text-secondary mb-2">${escapeHtml(c.dates || '')}</p><p class="font-serif text-text-secondary line-clamp-3">${escapeHtml(c.description || '')}</p>`;
+                    card.addEventListener('click', () => window.showCollection(c.id));
+                    list.appendChild(card);
+                });
+            }
+            loadPublicCollections();
+
+            // ---------- Add letter to one of my collections ----------
+            window.refreshCollectionButton = async function () {
+                const btn = $('add-to-collection-button');
+                const user = await currentUser();
+                if (!user) { btn.classList.add('hidden'); return; }
+                const { data } = await sb.from('collections').select('id,name').eq('user_id', user.id).order('created_at', { ascending: false });
+                myCollections = data || [];
+                btn.classList.toggle('hidden', myCollections.length === 0);
+            };
+            $('add-to-collection-button').addEventListener('click', () => {
+                const sel = $('add-to-collection-select');
+                sel.innerHTML = myCollections.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
+                $('add-to-collection-box').classList.toggle('hidden');
+            });
+            $('add-to-collection-confirm').addEventListener('click', async () => {
+                const letterId = $('report-letter-button').dataset.letterId;
+                const { error } = await sb.from('collection_letters').insert({ collection_id: $('add-to-collection-select').value, letter_id: letterId });
+                const m = $('report-message');
+                m.textContent = error ? (error.code === '23505' ? 'This letter is already in that collection.' : 'Could not add the letter to the collection.') : 'Added to your collection.';
+                m.classList.remove('hidden'); setTimeout(() => m.classList.add('hidden'), 4000);
+                $('add-to-collection-box').classList.add('hidden');
+            });
+
+            // ---------- Drafts (account drafts in the database; anonymous drafts in this browser only) ----------
+            const LOCAL_KEY = 'rememberUsDraft';
+            let draftId = null; let dirty = false; let saveTimer = null;
+            const fields = () => ({
+                to_name: $('write-to').value.slice(0, 200), body: $('write-text').value.slice(0, 20000),
+                signature: $('write-signature').value.slice(0, 200), color: $('selected-color').value, category: $('write-category').value,
+            });
+            function fillForm(d) {
+                $('write-to').value = d.to_name || ''; $('write-text').value = d.body || ''; $('write-signature').value = d.signature || '';
+                $('selected-color').value = d.color || 'ivory'; $('write-category').value = d.category || 'Other';
+                renderColorPicker();
+            }
+            const status = (t) => { $('draft-status').textContent = t; };
+            async function saveDraft() {
+                clearTimeout(saveTimer); dirty = false;
+                const f = fields();
+                if (!f.body.trim() && !f.to_name.trim()) return;
+                const user = await currentUser();
+                if (!user) {
+                    localStorage.setItem(LOCAL_KEY, JSON.stringify({ ...f, saved_at: new Date().toISOString() }));
+                    status('Saved in this browser at ' + fmtTime(new Date()) + ' (sign in to keep drafts in your account)');
+                    return;
+                }
+                const q = draftId ? sb.from('drafts').update(f).eq('id', draftId).select('id,updated_at').single()
+                                  : sb.from('drafts').insert(f).select('id,updated_at').single();
+                const { data, error } = await q;
+                if (error) { status('Could not save draft.'); return; }
+                draftId = data.id;
+                status('Draft saved ' + fmtTime(data.updated_at));
+            }
+            ['write-to', 'write-text', 'write-signature', 'write-category'].forEach(id => $(id).addEventListener('input', () => {
+                dirty = true; status('Unsaved changes'); clearTimeout(saveTimer); saveTimer = setTimeout(saveDraft, 2500);
+            }));
+            $('color-picker').addEventListener('click', () => { dirty = true; clearTimeout(saveTimer); saveTimer = setTimeout(saveDraft, 2500); });
+            $('draft-save').addEventListener('click', saveDraft);
+            $('draft-new').addEventListener('click', () => {
+                draftId = null; localStorage.removeItem(LOCAL_KEY); resetWriteForm(); status('');
+            });
+            window.addEventListener('beforeunload', () => { if (dirty) { const f = fields(); if (f.body.trim()) localStorage.setItem(LOCAL_KEY, JSON.stringify({ ...f, saved_at: new Date().toISOString() })); } });
+            window.onLetterSubmitted = async function () {
+                clearTimeout(saveTimer); dirty = false;
+                localStorage.removeItem(LOCAL_KEY);
+                if (draftId) { await sb.from('drafts').delete().eq('id', draftId); draftId = null; }
+                status('');
+                resetWriteForm();
+            };
+            // Restore an anonymous browser draft when opening the write page
+            (function restoreLocal() {
+                try {
+                    const d = JSON.parse(localStorage.getItem(LOCAL_KEY) || 'null');
+                    if (d && !$('write-text').value) { fillForm(d); status('Restored your draft from ' + fmtTime(d.saved_at)); }
+                } catch (e) {}
+            })();
+            // Keep the cursor visible above the phone keyboard
+            $('write-text').addEventListener('focus', () => setTimeout(() => $('write-text').scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 300));
+            if (window.visualViewport) window.visualViewport.addEventListener('resize', () => {
+                const a = document.activeElement;
+                if (a && a.closest && a.closest('#write-letter-form')) a.scrollIntoView({ block: 'nearest' });
+            });
+            window.openDraft = async function (id) {
+                const { data } = await sb.from('drafts').select('*').eq('id', id).maybeSingle();
+                if (!data) return;
+                draftId = data.id; fillForm(data); status('Draft last saved ' + fmtTime(data.updated_at));
+                navigate('write');
+            };
+
+            // ---------- Account page ----------
+            function setTab(t) {
+                activeTab = t;
+                document.querySelectorAll('.account-tab').forEach(b => {
+                    const on = b.dataset.tab === t;
+                    b.classList.toggle('bg-dusty-rose', on); b.classList.toggle('text-white', on);
+                    b.classList.toggle('bg-warm-beige', !on); b.classList.toggle('text-text-primary', !on);
+                });
+                document.querySelectorAll('.account-panel').forEach(p => p.classList.toggle('hidden', p.dataset.panel !== t));
+            }
+            document.querySelectorAll('.account-tab').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
+
+            async function renderLetters() {
+                const list = $('account-letters');
+                list.innerHTML = '<p class="text-text-secondary">Loading...</p>';
+                const { data: mine, error } = await sb.rpc('my_letters');
+                if (error) { list.innerHTML = '<p class="text-text-secondary">Could not load your letters.</p>'; return; }
+                if (!mine.length) { list.innerHTML = '<p class="text-text-secondary">You haven\'t sent any letters while signed in yet.</p>'; return; }
+                list.innerHTML = mine.map(l => `
+                    <div class="bg-white/70 backdrop-blur-sm p-6 rounded-lg shadow-sm border border-border-light">
+                        <p class="font-serif text-lg">To: <span class="font-bold">${escapeHtml(l.to_name)}</span></p>
+                        <p class="font-serif text-text-secondary line-clamp-3 my-2">${escapeHtml(l.body)}</p>
+                        <p class="text-sm text-text-secondary">Submitted ${formatDate(l.created_at)} · ${escapeHtml(l.category)} · Status: ${l.status === 'published' ? 'Published (publicly visible)' : escapeHtml(l.status)}</p>
+                        ${l.status === 'published' ? `<button type="button" class="mt-2 text-sm underline min-h-[44px]" onclick="showLetterDetail('${escapeHtml(l.id)}')">Open public page</button>` : ''}
+                    </div>`).join('');
+            }
+            async function renderDrafts() {
+                const list = $('account-drafts');
+                const { data, error } = await sb.from('drafts').select('id,to_name,body,updated_at').order('updated_at', { ascending: false });
+                if (error) { list.innerHTML = '<p class="text-text-secondary">Could not load your drafts.</p>'; return; }
+                if (!data.length) { list.innerHTML = '<p class="text-text-secondary">No drafts yet. Drafts save automatically while you write.</p>'; return; }
+                list.innerHTML = data.map(d => `
+                    <div class="bg-white/70 p-6 rounded-lg shadow-sm border border-border-light">
+                        <p class="font-serif text-lg">To: <span class="font-bold">${escapeHtml(d.to_name || '—')}</span></p>
+                        <p class="font-serif text-text-secondary line-clamp-2 my-2">${escapeHtml(d.body || '')}</p>
+                        <p class="text-sm text-text-secondary">Last saved ${fmtTime(d.updated_at)}</p>
+                        <div class="flex gap-2 mt-3">
+                            <button type="button" data-open-draft="${d.id}" class="bg-dusty-rose text-white text-sm py-2 px-5 rounded-full min-h-[44px]">Continue writing</button>
+                            <button type="button" data-del-draft="${d.id}" class="bg-warm-beige text-sm py-2 px-5 rounded-full min-h-[44px]">Delete</button>
+                        </div>
+                    </div>`).join('');
+                list.querySelectorAll('[data-open-draft]').forEach(b => b.addEventListener('click', () => window.openDraft(b.dataset.openDraft)));
+                list.querySelectorAll('[data-del-draft]').forEach(b => b.addEventListener('click', async () => {
+                    if (!confirm('Delete this draft?')) return;
+                    await sb.from('drafts').delete().eq('id', b.dataset.delDraft);
+                    if (draftId === b.dataset.delDraft) draftId = null;
+                    renderDrafts();
+                }));
+            }
+            async function renderCollections(user) {
+                const list = $('account-collections');
+                const { data, error } = await sb.from('collections').select('id,name,dates,description,status,created_at, collection_letters(letter_id)').eq('user_id', user.id).order('created_at', { ascending: false });
+                if (error) { list.innerHTML = '<p class="text-text-secondary">Could not load your collections.</p>'; return; }
+                myCollections = data;
+                if (!data.length) { list.innerHTML = '<p class="text-text-secondary">No collections yet.</p>'; return; }
+                list.innerHTML = data.map(c => `
+                    <div class="bg-white/70 p-6 rounded-lg shadow-sm border border-border-light">
+                        <p class="font-serif text-xl font-bold">${escapeHtml(c.name)}</p>
+                        <p class="text-sm text-text-secondary">${escapeHtml(c.dates || '')} · ${(c.collection_letters || []).length} letter(s)${c.status === 'hidden' ? ' · Hidden by moderator' : ''}</p>
+                        <div class="flex flex-wrap gap-2 mt-3">
+                            <button type="button" data-view="${escapeHtml(c.id)}" class="bg-dusty-rose text-white text-sm py-2 px-5 rounded-full min-h-[44px]">View page</button>
+                            <button type="button" data-edit="${escapeHtml(c.id)}" class="bg-warm-beige text-sm py-2 px-5 rounded-full min-h-[44px]">Edit</button>
+                            <button type="button" data-manage="${escapeHtml(c.id)}" class="bg-warm-beige text-sm py-2 px-5 rounded-full min-h-[44px]">Remove letters</button>
+                            <button type="button" data-delc="${escapeHtml(c.id)}" class="bg-cream text-sm py-2 px-5 rounded-full min-h-[44px]">Delete</button>
+                        </div>
+                        <div data-manage-box="${escapeHtml(c.id)}" class="hidden mt-3 space-y-2"></div>
+                    </div>`).join('');
+                list.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => window.showCollection(b.dataset.view)));
+                list.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => {
+                    const c = data.find(x => x.id === b.dataset.edit);
+                    $('collection-edit-id').value = c.id; $('collection-form-name').value = c.name;
+                    $('collection-form-dates').value = c.dates || ''; $('collection-form-description').value = c.description || '';
+                    $('collection-form-submit').textContent = 'Save changes'; $('collection-form-cancel').classList.remove('hidden');
+                    $('collection-form').scrollIntoView({ behavior: 'smooth' });
+                }));
+                list.querySelectorAll('[data-delc]').forEach(b => b.addEventListener('click', async () => {
+                    if (!confirm('Delete this collection? The letters themselves stay in the archive.')) return;
+                    await sb.from('collections').delete().eq('id', b.dataset.delc);
+                    renderCollections(user);
+                }));
+                list.querySelectorAll('[data-manage]').forEach(b => b.addEventListener('click', async () => {
+                    const box = list.querySelector(`[data-manage-box="${CSS.escape(b.dataset.manage)}"]`);
+                    box.classList.toggle('hidden'); if (box.classList.contains('hidden')) return;
+                    const { data: ls } = await sb.from('public_collection_letters').select('letter_id,to_name').eq('collection_id', b.dataset.manage);
+                    box.innerHTML = (ls || []).length ? ls.map(l => `<div class="flex justify-between items-center text-sm"><span>To ${escapeHtml(l.to_name)}</span><button type="button" data-rm="${escapeHtml(l.letter_id)}" class="underline min-h-[44px]">Remove</button></div>`).join('') : '<p class="text-sm text-text-secondary">No letters yet.</p>';
+                    box.querySelectorAll('[data-rm]').forEach(r => r.addEventListener('click', async () => {
+                        await sb.from('collection_letters').delete().eq('collection_id', b.dataset.manage).eq('letter_id', r.dataset.rm);
+                        r.parentElement.remove();
+                    }));
+                }));
+            }
+            function resetCollectionForm() {
+                $('collection-form').reset(); $('collection-edit-id').value = '';
+                $('collection-form-submit').textContent = 'Create collection'; $('collection-form-cancel').classList.add('hidden');
+            }
+            $('collection-form-cancel').addEventListener('click', resetCollectionForm);
+            $('collection-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const user = await currentUser(); if (!user) return;
+                const row = { name: $('collection-form-name').value.trim().slice(0, 200), dates: $('collection-form-dates').value.trim().slice(0, 200), description: $('collection-form-description').value.trim().slice(0, 5000) };
+                if (!row.name) return;
+                const id = $('collection-edit-id').value;
+                const { error } = id ? await sb.from('collections').update(row).eq('id', id) : await sb.from('collections').insert(row);
+                note($('collection-form-msg'), error ? 'Could not save the collection.' : (id ? 'Collection updated.' : 'Collection created. Open any letter to add it.'));
+                if (!error) { resetCollectionForm(); renderCollections(user); window.refreshCollectionButton(); }
+            });
+
+            window.renderAccount = async function () {
+                const user = await currentUser();
+                resetForm.classList.toggle('hidden', !(recovering && user));
+                form.classList.toggle('hidden', !!user);
+                signedIn.classList.toggle('hidden', !user || recovering);
+                if (!user || recovering) return;
+                $('account-email').textContent = user.email || '';
+                const verified = !!user.email_confirmed_at;
+                $('account-verified').textContent = verified ? 'Email verified' : 'Email not verified yet';
+                $('account-verified').className = 'text-sm mt-1 ' + (verified ? 'text-text-secondary' : 'text-terracotta');
+                $('resend-box').classList.toggle('hidden', verified);
+                const { data: banned } = await sb.rpc('is_banned', { _user_id: user.id });
+                $('account-banned').classList.toggle('hidden', !banned);
+                setTab(activeTab);
+                renderLetters(); renderDrafts(); renderCollections(user);
+            };
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const { error } = await sb.auth.signInWithPassword({ email: $('account-email-input').value, password: $('account-password-input').value });
+                if (error) return say(/confirm/i.test(error.message) ? 'Please confirm your email first — check your inbox for the link.' : error.message);
+                msg.classList.add('hidden'); form.reset(); renderAccount();
+            });
+            $('account-signup').addEventListener('click', async () => {
+                const email = $('account-email-input').value;
+                const password = $('account-password-input').value;
+                if (!email || password.length < 8) return say('Enter your email and a password of at least 8 characters.');
+                const { error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo: baseUrl + '?verified=1' } });
+                if (error) return say(error.message);
+                say('Check your email to confirm your account, then sign in here.');
+            });
+            $('account-forgot').addEventListener('click', async () => {
+                const email = $('account-email-input').value;
+                if (!email) return say('Enter your email above, then press "Forgot your password?" again.');
+                const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: baseUrl + '?reset=1' });
+                if (error) return say(error.message);
+                say('If an account exists for that email, a password reset link is on its way.');
+            });
+            resetForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const pw = $('account-new-password').value;
+                if (pw.length < 8) return note($('account-reset-message'), 'Use at least 8 characters.');
+                const { error } = await sb.auth.updateUser({ password: pw });
+                if (error) return note($('account-reset-message'), error.message);
+                recovering = false; resetForm.reset();
+                history.replaceState(null, '', baseUrl + '#account');
+                renderAccount();
+            });
+            $('password-change-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const user = await currentUser(); if (!user) return;
+                const current = $('pw-current').value; const next = $('pw-new').value;
+                if (next.length < 8) return note($('pw-msg'), 'New password must be at least 8 characters.');
+                const check = await sb.auth.signInWithPassword({ email: user.email, password: current });
+                if (check.error) return note($('pw-msg'), 'Your current password is incorrect.');
+                const { error } = await sb.auth.updateUser({ password: next, current_password: current });
+                note($('pw-msg'), error ? error.message : 'Password updated.');
+                if (!error) e.target.reset();
+            });
+            $('resend-verification').addEventListener('click', async () => {
+                const user = await currentUser(); if (!user) return;
+                const { error } = await sb.auth.resend({ type: 'signup', email: user.email, options: { emailRedirectTo: baseUrl + '?verified=1' } });
+                note($('resend-msg'), error ? error.message : 'Verification email sent.');
+            });
+            $('delete-account').addEventListener('click', async () => {
+                if ($('delete-confirm').value !== 'DELETE') return note($('delete-msg'), 'Type DELETE to confirm.');
+                if (!confirm('Permanently delete your account? This cannot be undone.')) return;
+                const { error } = await sb.rpc('delete_my_account');
+                if (error) return note($('delete-msg'), error.message);
+                await sb.auth.signOut();
+                navigate('home');
+            });
+            $('account-signout').addEventListener('click', async () => { await sb.auth.signOut(); draftId = null; renderAccount(); });
+            sb.auth.onAuthStateChange((event) => {
+                if (event === 'PASSWORD_RECOVERY') { recovering = true; navigate('account', { forceReload: true }); return; }
+                if (event === 'SIGNED_OUT') draftId = null;
+                if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+                    setTimeout(() => { if (currentView === 'account') renderAccount(); window.refreshCollectionButton(); }, 0);
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
