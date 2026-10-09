@@ -180,7 +180,7 @@
         <section id="search-view" class="view-transition hidden-view py-8">
             <h2 class="text-4xl font-serif text-text-primary mb-8 text-center">Find a letter.</h2>
             <div id="search-input-container" class="max-w-4xl mx-auto mb-8 hidden"> <!-- Added hidden class -->
-                <input type="text" id="search-input" placeholder="Search by name or words..." class="w-full p-4 rounded-lg border border-border-light focus:ring-2 focus:ring-dusty-rose focus:border-dusty-rose transition-all shadow-sm text-lg bg-white/70 backdrop-blur-sm">
+                <input type="text" id="search-input" placeholder="Search by recipient name..." class="w-full p-4 rounded-lg border border-border-light focus:ring-2 focus:ring-dusty-rose focus:border-dusty-rose transition-all shadow-sm text-lg bg-white/70 backdrop-blur-sm">
             </div>
 
             <div class="max-w-4xl mx-auto mb-8 p-6 bg-white/70 backdrop-blur-sm rounded-lg shadow-sm border border-border-light">
@@ -769,7 +769,7 @@
             if (searchInputContainer && !searchInputContainer.classList.contains('hidden') && currentFilters.search) {
                 const searchTerm = currentFilters.search.trim().toLowerCase();
                 filtered = filtered.filter(letter =>
-                    letter.to.toLowerCase().includes(searchTerm) || letter.text.toLowerCase().includes(searchTerm)
+                    (letter.to || "").toLowerCase().includes(searchTerm)
                 );
             }
 
