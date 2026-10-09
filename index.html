@@ -121,6 +121,7 @@
                 <a href="#browse" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('browse')">Explore</a>
                 <a href="#write" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('write')">Write a Letter</a>
                 <a href="#about" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('about')">About</a>
+                <a href="#suggestions" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('suggestions')">Suggestions</a>
                 <button class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('search', {focusSearch: true})">Search</button>
                 <a href="#account" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('account')">Account</a>
             </div>
@@ -132,6 +133,7 @@
             <a href="#browse" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('browse')">Explore</a>
             <a href="#write" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('write')">Write a Letter</a>
             <a href="#about" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('about')">About</a>
+            <a href="#suggestions" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('suggestions')">Suggestions</a>
             <button class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('search', {focusSearch: true})">Search</button>
             <a href="#account" class="text-text-secondary hover:text-dusty-rose transition-colors" onclick="navigate('account')">Account</a>
         </div>
@@ -324,6 +326,34 @@
                 <button type="submit" class="w-full bg-dusty-rose text-white font-medium py-3 px-8 rounded-full shadow-md hover:bg-terracotta transition-colors">
                     Send it into the archive
                 </button>
+            </form>
+        </section>
+
+        <!-- Suggestions View -->
+        <section id="suggestions-view" class="view-transition hidden-view py-8 flex flex-col items-center">
+            <h2 class="text-4xl font-serif text-text-primary mb-4 text-center">Suggestions &amp; Feature Requests</h2>
+            <p class="text-xl text-text-secondary mb-8 text-center max-w-2xl">
+                Have an idea that could make Remember Us better? I'd love to hear it. Share a feature you'd like to see, a suggestion, or any feedback that could help improve the website. Every suggestion is appreciated.
+            </p>
+            <form id="suggestion-form" class="write-letter-form p-5 sm:p-8 md:p-12 max-w-3xl w-full mx-auto relative" novalidate>
+                <div class="mb-6">
+                    <label for="suggestion-title" class="block text-lg font-serif text-text-primary mb-2">Suggestion title:</label>
+                    <input type="text" id="suggestion-title" maxlength="150" required placeholder="A short summary of your idea" class="w-full p-3 rounded-md border border-border-light focus:ring-2 focus:ring-dusty-rose focus:border-dusty-rose bg-white/70 backdrop-blur-sm">
+                </div>
+                <div class="mb-6">
+                    <label for="suggestion-type" class="block text-lg font-serif text-text-primary mb-2">Type of suggestion:</label>
+                    <select id="suggestion-type" class="w-full p-3 rounded-md border border-border-light focus:ring-2 focus:ring-dusty-rose focus:border-dusty-rose bg-white/70 backdrop-blur-sm">
+                        <option>New Feature Request</option><option>Website Improvement</option><option>Bug Report</option><option>Design Suggestion</option><option>General Feedback</option><option>Other</option>
+                    </select>
+                </div>
+                <div class="mb-6">
+                    <label for="suggestion-description" class="block text-lg font-serif text-text-primary mb-2">Description:</label>
+                    <textarea id="suggestion-description" rows="8" maxlength="5000" required placeholder="Tell me about your idea in as much detail as you like..." class="w-full p-3 rounded-md border border-border-light focus:ring-2 focus:ring-dusty-rose focus:border-dusty-rose bg-white/70 backdrop-blur-sm"></textarea>
+                </div>
+                <div style="position:absolute;left:-9999px" aria-hidden="true"><label>Leave empty<input type="text" id="suggestion-website" tabindex="-1" autocomplete="off"></label></div>
+                <p class="text-sm text-text-secondary mb-6">No account, name or email needed. Suggestions are private and only read by the site owner.</p>
+                <p id="suggestion-msg" class="text-base mb-4 hidden" role="status"></p>
+                <button type="submit" id="suggestion-submit" class="w-full bg-dusty-rose text-white font-medium py-3 px-8 rounded-full shadow-md hover:bg-terracotta transition-colors min-h-[44px]">Submit Suggestion</button>
             </form>
         </section>
 
@@ -613,6 +643,7 @@
             'account': document.getElementById('account-view'),
             'unavailable': document.getElementById('unavailable-view'),
             'collection': document.getElementById('collection-view'),
+            'suggestions': document.getElementById('suggestions-view'),
         };
 
         // Client-side storage for reported letters (for demonstration only)
@@ -1535,5 +1566,35 @@
             });
         })();
     </script>
+<script>
+(function(){
+  const f=document.getElementById('suggestion-form'); if(!f) return;
+  const btn=document.getElementById('suggestion-submit'), msg=document.getElementById('suggestion-msg');
+  const openedAt=Date.now(); let busy=false;
+  const TYPES=['New Feature Request','Website Improvement','Bug Report','Design Suggestion','General Feedback','Other'];
+  function show(t,ok){msg.textContent=t;msg.classList.remove('hidden');msg.style.color=ok?'#5b7a5b':'#a0522d';}
+  f.addEventListener('submit',async function(e){
+    e.preventDefault(); if(busy) return;
+    const title=document.getElementById('suggestion-title').value.trim();
+    const type=document.getElementById('suggestion-type').value;
+    const description=document.getElementById('suggestion-description').value.trim();
+    if(document.getElementById('suggestion-website').value) return show('Thank you for helping make Remember Us better! Your suggestion has been received.',true);
+    if(title.length<3||title.length>150) return show('Please enter a title between 3 and 150 characters.');
+    if(!TYPES.includes(type)) return show('Please choose a type of suggestion.');
+    if(description.length<10||description.length>5000) return show('Please describe your idea in 10 to 5000 characters.');
+    if(Date.now()-openedAt<3000) return show('Please take a moment before submitting.');
+    const last=+localStorage.getItem('ru_last_suggestion')||0;
+    if(Date.now()-last<30000) return show('Please wait a few seconds before sending another suggestion.');
+    busy=true; btn.disabled=true; btn.textContent='Sending...';
+    try{
+      const {error}=await window.sb.from('suggestions').insert({title:title,suggestion_type:type,description:description});
+      if(error) throw error;
+      localStorage.setItem('ru_last_suggestion',String(Date.now()));
+      f.reset(); show('Thank you for helping make Remember Us better! Your suggestion has been received.',true);
+    }catch(err){ show(/already received/i.test(err&&err.message||'')?'This suggestion was already received. Thank you!':'Sorry, your suggestion could not be sent. Please try again.'); }
+    finally{ busy=false; btn.disabled=false; btn.textContent='Submit Suggestion'; }
+  });
+})();
+</script>
 </body>
 </html>
